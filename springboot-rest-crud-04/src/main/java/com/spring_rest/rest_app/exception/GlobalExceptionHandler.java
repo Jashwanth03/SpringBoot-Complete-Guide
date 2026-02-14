@@ -1,36 +1,60 @@
 package com.spring_rest.rest_app.exception;
 
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(StudentNotFoundException.class)
-    public ResponseEntity<?> handleStudentNotFoundException(StudentNotFoundException ex) {
+    @ExceptionHandler(EmployeeNotFoundException.class)
+    public ResponseEntity<?> handleEmployeeNotNotFoundException(EmployeeNotFoundException e) {
+
+        EmployeeErrorResponse employeeErrorResponse = new EmployeeErrorResponse();
+
+        employeeErrorResponse.setStatusCode(HttpStatus.NOT_FOUND.value());
+        employeeErrorResponse.setMessage(e.getMessage());
+        employeeErrorResponse.setTimestamp(System.currentTimeMillis());
+
+        return new ResponseEntity<>(employeeErrorResponse, HttpStatus.NOT_FOUND);
+    }
 
 
-        StudentErrorResponse error = new StudentErrorResponse();
+    //@Valid --> must handle MethodArgumentsNotvalidException
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleValidationException(MethodArgumentNotValidException e) {
+        Map<String, String> errors = new HashMap<>();
+        e.getBindingResult().getFieldErrors().forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage()));
 
-        error.setStatusCode(HttpStatus.NOT_FOUND.value());
-        error.setMessage(ex.getMessage());
-        error.setTimestamp(System.currentTimeMillis());
+        return ResponseEntity.badRequest().body(errors);
+    }
 
-        return new ResponseEntity<>(error , HttpStatus.NOT_FOUND);
+    //Check if email is unique
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<?> handleDataIntegrity(DataIntegrityViolationException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body("Duplicate value or constraint violation");
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleException(Exception ex){
+    public ResponseEntity<?> handleException(Exception ex) {
 
-        StudentErrorResponse error = new StudentErrorResponse();
+        EmployeeErrorResponse error = new EmployeeErrorResponse();
 
         error.setStatusCode(HttpStatus.BAD_REQUEST.value());
         error.setMessage(ex.getMessage());
         error.setTimestamp(System.currentTimeMillis());
 
-        return new ResponseEntity<>(error , HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 }
