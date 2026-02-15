@@ -1,6 +1,7 @@
 package com.spring_rest.rest_app.controller;
 
 
+import com.spring_rest.rest_app.dto.EmployeePatchDto;
 import com.spring_rest.rest_app.dto.EmployeeRequestDto;
 import com.spring_rest.rest_app.dto.EmployeeResponseDto;
 
@@ -26,6 +27,8 @@ public class EmployeeController {
         this.employeeService = employeeService;
     }
 
+
+    //GET ALL EMPLOYEES
     @GetMapping
     public ResponseEntity<Page<EmployeeResponseDto>> getAllEmployees(
             @RequestParam(defaultValue = "0") int page,
@@ -34,11 +37,15 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.getAllEmployees(page, size));
     }
 
+
+    //GET EMPLOYEE BY ID
     @GetMapping("/{employeeId}")
     public ResponseEntity<EmployeeResponseDto> getEmployeesById(@PathVariable Long employeeId) {
         return ResponseEntity.ok(employeeService.getEmployeesById(employeeId));
     }
 
+
+    //ADD EMPLOYEES
     @PostMapping
     public ResponseEntity<EmployeeResponseDto> addEmployees(@Valid @RequestBody EmployeeRequestDto employeeRequestDto) {
 
@@ -49,6 +56,29 @@ public class EmployeeController {
                 .body(savedEmployee);
     }
 
+    //UPDATE EMPLOYEE
+    @PutMapping("/{employeeId}")
+    public ResponseEntity<EmployeeResponseDto> updateEmployees(@PathVariable Long employeeId, @Valid @RequestBody EmployeeRequestDto employeeRequestDto) {
+        EmployeeResponseDto updateEmployee = employeeService.updateEmployee(employeeId,employeeRequestDto);
+
+        return ResponseEntity.created(URI.create("/rest/employee" + updateEmployee.id()))
+                .body(updateEmployee);
+    }
+
+
+    //UPDATE EMPLOYEE DETAILS PARTIALLY WITH PATCH
+    @PatchMapping("/{employeeId}")
+    public ResponseEntity<EmployeeResponseDto> patchEmployees(
+            @PathVariable Long employeeId,
+            @Valid @RequestBody EmployeePatchDto employeePatchDto
+    ){
+        EmployeeResponseDto patchEmployee = employeeService.patchEmployee(employeeId,employeePatchDto);
+        return ResponseEntity.created(URI.create("/rest/employee" + patchEmployee.id()))
+                .body(patchEmployee);
+    }
+
+
+    //DELETE EMPLOYEE BY ID
     @DeleteMapping("/{employeeId}")
     public ResponseEntity<EmployeeResponseDto> deleteEmployees(@PathVariable Long employeeId) {
         employeeService.removeEmployeeById(employeeId);
