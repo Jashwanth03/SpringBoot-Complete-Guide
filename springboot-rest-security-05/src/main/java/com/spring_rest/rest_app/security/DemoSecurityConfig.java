@@ -10,31 +10,29 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
+import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+
+import javax.sql.DataSource;
 
 @Configuration
 public class DemoSecurityConfig {
+
     @Bean
-    public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
+    public UserDetailsManager userDetailsManager(DataSource dataSource) {
+    //database MUST contain these tables: USERS & AUTHORITIES for this to work
+//        return new JdbcUserDetailsManager(dataSource);
+        //CUSTOM TABLE NAME AND COLUMNS
+        JdbcUserDetailsManager jdbcUserDetailsManager = new JdbcUserDetailsManager(dataSource);
 
-        UserDetails john = User.builder()
-                .username("john")
-                .password("{noop}test123")
-                .roles("EMPLOYEE")
-                .build();
-        UserDetails jash = User.builder()
-                .username("jash")
-                .password("{noop}test123")
-                .roles("EMPLOYEE", "MANAGER")
-                .build();
-        UserDetails mady = User.builder()
-                .username("mady")
-                .password("{noop}test123")
-                .roles("EMPLOYEE", "MANAGER", "ADMIN")
-                .build();
+        //query to retrieve a user by username
+        jdbcUserDetailsManager.setUsersByUsernameQuery("select username, password, active from members where username = ?");
 
 
-        return new InMemoryUserDetailsManager(john, jash, mady);
+        //query to retrieve the auth/roles by username
+        jdbcUserDetailsManager.setAuthoritiesByUsernameQuery("select username, role from roles where username = ?");
+        return jdbcUserDetailsManager;
     }
 
     @Bean
@@ -49,7 +47,7 @@ public class DemoSecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/employees/**").hasRole("ADMIN")
         );
 
-        //use HTTP BAsic authentication
+        //use HTTP Basic authentication
         http.httpBasic(Customizer.withDefaults());
 
         //disable csrf
@@ -58,4 +56,26 @@ public class DemoSecurityConfig {
 
         return http.build();
     }
+    //@Bean
+    //    public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
+//
+//        UserDetails john = User.builder()
+//                .username("john")
+//                .password("{noop}test123")
+//                .roles("EMPLOYEE")
+//                .build();
+//        UserDetails jash = User.builder()
+//                .username("jash")
+//                .password("{noop}test123")
+//                .roles("EMPLOYEE", "MANAGER")
+//                .build();
+//        UserDetails mady = User.builder()
+//                .username("mady")
+//                .password("{noop}test123")
+//                .roles("EMPLOYEE", "MANAGER", "ADMIN")
+//                .build();
+//
+//
+//        return new InMemoryUserDetailsManager(john, jash, mady);
+//    }
 }
